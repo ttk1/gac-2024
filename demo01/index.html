@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>WebGPU MD5 Demo 01</title>
+</head>
+
+<body>
+  結果はコンソールに出力されます！
+  <script src="./shader.js"></script>
+  <script>
+    window.onload = async () => {
+      const adapter = await navigator.gpu.requestAdapter();
+      const device = await adapter.requestDevice();
+
+      // 入力を渡す用のバッファ
+      const wordBuffer = device.createBuffer({
+        size: 4,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+      });
+
+      // ランダムな 4 バイトのデータを転送
+      const input = new Uint32Array(1);
+      crypto.getRandomValues(input);
+      device.queue.writeBuffer(wordBuffer, 0, input, 0, 1);
+
+      // 計算結果の保存先のバッファ
+      const resultBuffer = device.createBuffer({
+        size: 16,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+      });
+
+      // 結果取り出し用のステージングバッファ
+      const stagingBuffer = device.createBuffer({
+        size: 16,
+        usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+      });
+
+      // コンピュートパイプラインの実行
+      const bindGroupLayout = device.createBindGroupLayout({
+        entries: [
+          {
+            binding: 0,
+            visibility: GPUShaderStage.COMPUTE,
+            buffer: {
+              type: 'uniform',
+            },
+          },
+          {
+            binding: 1,
+            visibility: GPUShaderStage.COMPUTE,
+            buffer: {
+              type: 'storage',
+            },
+          },
+        ],
+      });
+
+      const bindGroup = device.createBindGroup({
+        layout: bindGroupLayout,
+        entries: [
+          {
+            binding: 0,
+            resource: {
+              buffer: wordBuffer,
+            },
+          },
+          {
+            binding: 1,
+            resource: {
+              buffer: resultBuffer,
+            },
+          },
+        ],
+      });
+
+      const shaderModule = device.createShaderModule({
+        code: shader,
+      });
+
+      const computePipeline = device.createComputePipeline({
+        layout: device.createPipelineLayout({
+          bindGroupLayouts: [bindGroupLayout],
+        }),
+        compute: {
+          module: shaderModule,
+          entryPoint: 'main',
+        },
+      });
+
+      const commandEncoder = device.createCommandEncoder();
+      const computePass = commandEncoder.beginComputePass();
+      computePass.setPipeline(computePipeline);
+      computePass.setBindGroup(0, bindGroup);
+      computePass.dispatchWorkgroups(1);
+      computePass.end();
+
+      // 結果の取り出し
+      commandEncoder.copyBufferToBuffer(
+        resultBuffer,
+        0,
+        stagingBuffer,
+        0,
+        16
+      );
+      device.queue.submit([commandEncoder.finish()]);
+      await stagingBuffer.mapAsync(
+        GPUMapMode.READ,
+        0,
+        16
+      );
+      const copyArrayBuffer = stagingBuffer.getMappedRange(0, 16);
+      const result = new Uint8Array(copyArrayBuffer.slice(0));
+      stagingBuffer.unmap();
+      let output = '';
+      for (const e of result) {
+        output += e.toString(16).padStart(2, '0');
+      }
+
+      // 結果表示
+      console.log(`入力: ${input[0]}`);
+      console.log(`MD5 ハッシュ値: ${output}`);
+    };
+  </script>
+</body>
+
+</html>
