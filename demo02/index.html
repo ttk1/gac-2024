@@ -126,7 +126,7 @@
       console.log(`word1: ${word1}`);
       console.log(`word2: ${word2}`);
       console.log(`実行時間: ${Math.round(end - start)} ms`);
-      console.log(`ハッシュレート: ${Math.round((2 ** 32 * word2 * 1000 / (end - start)) / (1024 ** 3))} GH/s`);
+      console.log(`ハッシュレート: ${Math.round((2 ** 32 * (word2 + 1) * 1000 / (end - start)) / (1024 ** 3))} GH/s`);
     };
   </script>
 </body>
