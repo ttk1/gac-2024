@@ -7,7 +7,8 @@
 </head>
 
 <body>
-  結果はコンソールに出力されます！
+  結果はコンソールに出力されます！<br>
+  <a href="https://github.com/ttk1/gac-2024/tree/main/demo02">ソースコードはこちら</a>
   <script src="./shader.js"></script>
   <script>
     const WORKGROUP_COUNT = 1 << WORKGROUP_COUNT_BITS;
@@ -79,6 +80,7 @@
 
       let word1, word2;
       for (word2 = 0; word2 <= 0xffffffff; word2++) {
+        // word2 の値をバッファに転送
         device.queue.writeBuffer(word2Buffer, 0, new Uint32Array([word2]), 0, 1);
         const computePipeline = device.createComputePipeline({
           layout: device.createPipelineLayout({
