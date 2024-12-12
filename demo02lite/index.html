@@ -11,7 +11,6 @@
   <script src="./shader.js"></script>
   <script>
     const WORKGROUP_COUNT = 1 << WORKGROUP_COUNT_BITS;
-    const WORKGROUP_SIZE = 1 << WORKGROUP_SIZE_BITS;
     window.onload = async () => {
       const adapter = await navigator.gpu.requestAdapter();
       const device = await adapter.requestDevice();
